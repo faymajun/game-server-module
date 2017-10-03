@@ -1,4 +1,4 @@
-package DataStream
+package datastream
 
 import (
 	"github.com/pkg/errors"
@@ -7,16 +7,16 @@ import (
 	"unicode/utf8"
 )
 
-type DataStream struct {
+type DataInputStream struct {
 	data  []byte
 	index int
 	len   int
 }
 
-func NewDataStream(filePath string) *DataStream {
+func NewDataStream(filePath string) *DataInputStream {
 	data, err := ioutil.ReadFile(filePath)
 	check(err)
-	return &DataStream{data, 0, len(data)}
+	return &DataInputStream{data, 0, len(data)}
 }
 func check(e error) {
 	if e != nil {
@@ -24,13 +24,13 @@ func check(e error) {
 	}
 }
 
-func (d *DataStream) ReadFloat32() (float32, error) {
+func (d *DataInputStream) ReadFloat32() (float32, error) {
 	count, err := d.ReadUInt32()
 	check(err)
 	return math.Float32frombits(count), nil
 }
 
-func (d *DataStream) ReadUInt32() (uint32, error) {
+func (d *DataInputStream) ReadUInt32() (uint32, error) {
 	buff, error := d.readToBuff(4)
 	check(error)
 	if len(buff) < 4 {
@@ -42,7 +42,7 @@ func (d *DataStream) ReadUInt32() (uint32, error) {
 	return uint32(uint32(buff[0])<<24 + uint32(buff[1])<<16 + uint32(buff[2])<<8 + uint32(buff[3])<<0), nil
 }
 
-func (d *DataStream) ReadInt32() (int32, error) {
+func (d *DataInputStream) ReadInt32() (int32, error) {
 	buff, error := d.readToBuff(4)
 	check(error)
 	if len(buff) < 4 {
@@ -54,7 +54,7 @@ func (d *DataStream) ReadInt32() (int32, error) {
 	return int32(int(buff[0])<<24 + int(buff[1])<<16 + int(buff[2])<<8 + int(buff[3])<<0), nil
 }
 
-func (d *DataStream) ReadInt16() (int16, error) {
+func (d *DataInputStream) ReadInt16() (int16, error) {
 	buff, error := d.readToBuff(2)
 	check(error)
 	if len(buff) < 2 {
@@ -66,7 +66,7 @@ func (d *DataStream) ReadInt16() (int16, error) {
 	return int16(int(buff[0])<<8 + int(buff[1])<<0), nil
 }
 
-func (d *DataStream) ReadUTF() ([]rune, error) {
+func (d *DataInputStream) ReadUTF() (string, error) {
 	count, error := d.ReadInt16()
 	len := int(count)
 	check(error)
@@ -76,15 +76,15 @@ func (d *DataStream) ReadUTF() ([]rune, error) {
 	for index < len {
 		rune, size := utf8.DecodeRune(buff[index:len])
 		if size <= 0 {
-			return nil, errors.New(" byte is error.")
+			return "", errors.New(" byte is error.")
 		}
 		runes = append(runes, rune)
 		index += size
 	}
-	return runes, nil
+	return string(runes), nil
 }
 
-func (d *DataStream) Available() bool {
+func (d *DataInputStream) Available() bool {
 	if d.len-d.index > 1 {
 		return true
 	} else {
@@ -92,7 +92,7 @@ func (d *DataStream) Available() bool {
 	}
 }
 
-func (d *DataStream) readToBuff(count int) ([]byte, error) {
+func (d *DataInputStream) readToBuff(count int) ([]byte, error) {
 	if count > d.len-d.index {
 		return nil, errors.New("count over range.")
 	}
